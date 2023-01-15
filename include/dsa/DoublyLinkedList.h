@@ -1,6 +1,10 @@
 #ifndef DoublyLinkedList_H
 #define DoublyLinkedList_H
 
+//#if __cplusplus >= 201103L
+    #include <functional>
+//#endif
+
 namespace DSA
 {
     template<class T> class Node final
@@ -32,9 +36,11 @@ namespace DSA
             
             bool is_empty ();
             Node<T>* contains (bool(*callBack)(const Node<T>*));
-            void forEach (void(*callBack)(const Node<T>*));
-
-
+            void for_each (void(*callBack)(const Node<T>*));
+//#if __cplusplus >= 201103L
+            void for_each(std::function<void(const Node<T>*)> call_back);
+            void for_each(std::function<void(T&)> call_back);
+//#endif
             Node<T>* begin ();
             Node<T>* end ();
         private:
@@ -45,7 +51,32 @@ namespace DSA
     };
 
     template<class T>
-    void DoublyLinkedList<T>::forEach(void (*callBack)(const Node<T> *))
+    void DoublyLinkedList<T>::for_each(std::function<void(T&)> call_back)
+    {
+        Node<T>* itr = head;
+        while (itr != nullptr)
+        {
+            call_back(itr->data);
+            itr = itr->next;
+        }
+    }
+
+//#if __cplusplus >= 201103L
+    template<class T>
+    void DoublyLinkedList<T>::for_each(std::function<void(const Node<T>*)> call_back)
+    {
+        Node<T>* itr = head;
+        while (itr != nullptr)
+        {
+            call_back(itr);
+            itr = itr->next;
+        }
+    }
+//#endif
+
+
+    template<class T>
+    void DoublyLinkedList<T>::for_each(void (*callBack)(const Node<T> *))
     {
         Node<T>* itr = head;
         while (itr != nullptr)

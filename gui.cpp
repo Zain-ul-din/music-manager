@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include "gui.h";
 
 Renderer* Renderer::Instance()
@@ -12,7 +13,7 @@ Renderer* Renderer::Instance()
 Renderer* Renderer::instance = nullptr;
 
 bool Renderer::show_demo_window = true;
-ImVec4 Renderer::clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+ImVec4 Renderer::clear_color = ImVec4 (0.406863, 0.406863, 0.406863, 0.137255);
 
 WNDCLASSEXW Renderer::wc = { sizeof(wc), CS_CLASSDC, Renderer::WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"file-manager", NULL };
 HWND Renderer::hwnd = ::CreateWindowW(wc.lpszClassName, L"file-manger", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
@@ -23,13 +24,19 @@ HWND Renderer::hwnd = ::CreateWindowW(wc.lpszClassName, L"file-manger", WS_OVERL
 /// </summary>
 Renderer::Renderer()
 {
+
     // Create application window
     //ImGui_ImplWin32_EnableDpiAwareness();
-
     Renderer::wc = { sizeof(wc), CS_CLASSDC, Renderer::WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, NULL, NULL, NULL, L"file-manager", NULL };
     ::RegisterClassExW(&wc);
     Renderer::hwnd = ::CreateWindowW(wc.lpszClassName, L"file-manger", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
+    /*HBITMAP hBitmap = (HBITMAP)LoadImageW(NULL, L"./asserts/bg.jpg", IMAGE_BITMAP, 0, 0, LR_LOADFROMFILE | LR_CREATEDIBSECTION);
+    HBRUSH hBrush = CreatePatternBrush(hBitmap);
+    SetWindowLong(Renderer::hwnd, GWL_STYLE, GetWindowLong(Renderer::hwnd, GWL_STYLE) | WS_CLIPCHILDREN);
+    SetWindowLong(Renderer::hwnd, GWL_EXSTYLE, GetWindowLong(Renderer::hwnd, GWL_EXSTYLE) | WS_EX_LAYERED);
+    SetLayeredWindowAttributes(Renderer::hwnd, 0, 255, LWA_ALPHA);
+    RedrawWindow(Renderer::hwnd, NULL, NULL, RDW_INVALIDATE);*/
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -58,6 +65,51 @@ Renderer::Renderer()
     ImGui_ImplWin32_Init(hwnd);
     ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
 
+}
+
+void Renderer::render(IRenderItem& renderItem)
+{
+    // Main loop
+    bool done = false;
+
+    while (!done)
+    {
+        // Poll and handle messages (inputs, window resize, etc.)
+        // See the WndProc() function below for our to dispatch events to the Win32 backend.
+        MSG msg;
+        while (::PeekMessage(&msg, NULL, 0U, 0U, PM_REMOVE))
+        {
+            ::TranslateMessage(&msg);
+            ::DispatchMessage(&msg);
+            if (msg.message == WM_QUIT)
+                done = true;
+        }
+        if (done)   break;
+
+        // Start the Dear ImGui frame
+        ImGui_ImplDX11_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
+        ///
+        ///    RENDER
+        /// 
+
+        renderItem.render();
+
+        ///
+        ///   END RENDER
+        /// 
+
+        // Rendering
+        ImGui::Render();
+        const float clear_color_with_alpha[4] = { clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w };
+        g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
+        g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, clear_color_with_alpha);
+        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+        g_pSwapChain->Present(1, 0); // Present with vsync
+    }
 }
 
 void Renderer::render(void(*callBack)())

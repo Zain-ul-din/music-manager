@@ -6,8 +6,7 @@
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <tchar.h>
-#include <iostream>
-#include <string>
+#include "IRenderItem.h"
 
 class Renderer 
 {
@@ -15,6 +14,9 @@ public:
     static Renderer* Instance();
 
     void render(void(*callBack)());
+	void render(IRenderItem& renderItem);
+
+	static ImVec4 clear_color;
 private:
 	Renderer();
 
@@ -34,7 +36,6 @@ private:
 	static LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
     
     static bool show_demo_window;
-    static ImVec4 clear_color;
 
     static WNDCLASSEXW wc;
     static HWND hwnd;
